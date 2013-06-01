@@ -1,0 +1,299 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{array}
+\usepackage{amsmath}
+
+
+\usetheme{Boadilla}
+\usecolortheme{beaver}
+\usefonttheme{professionalfonts}
+\useinnertheme{rectangles}
+\useoutertheme{miniframes}
+
+
+
+\setbeamercovered{transparent}
+\beamertemplatenavigationsymbolsempty
+\setbeamertemplate{footline}[frame number]
+
+
+\title[Cluster]{Quick \& diRty}
+\subtitle[Wupper2013]{Eine pragmatische Einführung in R \\
+(Seminar Forschungsevaluation, Universität Wuppertal)}
+\author[Holtmeier]{Stephan Holtmeier}
+\institute[kibit]{kibit GmbH, stephan@holtmeier.de}
+\date[31.05.13]{31. Mai 2013}
+\keywords{Cluster, Analyse}
+
+                                              
+<<echo=FALSE>>=
+options(width=50)
+@
+
+\begin{document}
+	
+    \maketitle
+
+
+    \section{IDE}
+
+    \begin{frame}
+        \frametitle{Unsere Entwicklungsumgebung: RStudio}
+        \begin{figure}
+            \centering
+            \includegraphics[width=11cm]{rstudio.png}
+        \end{figure}
+    \end{frame}
+    
+    \begin{frame}
+        \frametitle{Erste Schritte mit RStudio}
+        \begin{block}{Voraussetzungen}
+            \textbf{R} (>v2.11) und \textbf{RStudio} (> v0.97) müssen installiert sein
+        \end{block}
+        \begin{enumerate}
+            \item Ein R-Skript endet auf \texttt{.r}
+            \item Ein Kommentar (grün) beginnt mit \texttt{\#} und wird von R "überlesen"
+            \item \texttt{Source} führt ein komplettes R-Skript aus\\ \texttt{Run} führt einen markierten Teilbereich aus
+            \item Im \textbf{Workspace} werden \emph{Werte}, \emph{Daten}, \emph{Ergebnisse} und \emph{Grafiken} angezeigt, die "flüchtig" gespeichert sind
+            \item \textbf{Files} = Dateibrowser \\ \textbf{Plots} = Grafikausgabe \\ \textbf{Packages} = Zusatzpakete betrachten und installieren \\ \textbf{Help} = sehr hilfreiche Hilfe
+            \item \textbf{Console} = Textausgabe (und -eingabe)
+        \end{enumerate}
+    \end{frame}
+
+
+    \section{Grundlagen}
+    
+    \begin{frame}[<+->]
+        \frametitle{Direkt mit R loslegen...}
+        \begin{enumerate}
+            \item Schnödes Rechnen (\texttt{+, -, *, /})
+            \item Wahr oder falsch? (\texttt{<, >, ==, TRUE, FALSE})
+            \item Variablen-Zuweisung (\texttt{<-})
+            \item Funktionen (\texttt{sum(), rep(), sqrt(), etc.})
+        \end{enumerate}
+        \begin{alertblock}{Achtung beim \texttt{=}}
+            Wir verwenden möglichst nicht das Zeichen \texttt{=}. Stattdessen weisen wir einer Variablen etwas mit \texttt{<-} zu. Wollen wir Gleichheit überprüfen, verwenden wir \texttt{==}.
+        \end{alertblock}
+    \end{frame}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Am Anfang steht ein Datensatz}
+        R kann sehr viele verschiedene Formate einlesen, unter anderem
+        \begin{enumerate}
+            \item SPSS
+            \item Excel
+            \item SQL-Datenbanken
+        \end{enumerate}
+        \begin{block}{CSV-Format}
+            Das einfachste (und beste) Datenformat besteht jedoch aus einer simplen Textdatei. Die Endung \texttt{.csv} steht für \emph{comma seperated values}. Auch ein Semikolon oder ein Tabulator sind geeignete Trenner. Die erste Zeile wird für die Variablennamen verwendet.
+        \end{block}
+        <<Read_Data, eval=FALSE>>=
+        bsp <- read.csv("bsp.csv")
+        @
+    \end{frame}
+    
+    
+    \section{Vektoren}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Vektoren mit Werten füllen}
+        Ein Vektor ist schlicht eine Liste von Werten. \texttt{c()} steht für "combine"
+        <<Vektor_Bsp1>>=
+        vektor.1 <- c(3, 6, 9, 15, 15)
+        vektor.2 <- seq(1, 10, 0.5)
+        vektor.3 <- c("Köln", "Wuppertal", "Dortmund", "Essen")
+        vektor.4 <- rep(vektor.3, 10)
+        @
+    \end{frame}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Auf Inhalte in Vektoren wieder zugreifen}
+        Der Zugriff auf einzelne Werte innerhalb eines Vektors erfolgt über einen \texttt{[INDEX]}
+        <<Vektor_Bsp2>>=
+        vektor.1[3] #Wert an Position 3
+        vektor.2[c(5,6,7)] #Werte an den Positionen 5,6 & 7
+        vektor.3[5] <- c("Bochum") #ergänzen
+        print(vektor.3, quote=FALSE)
+        @
+    \end{frame}    
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Einen Vektor grafisch darstellen, z.B. als Balkendiagramm}
+        Zur Erinnerung: \texttt{vektor.1 <- c(3, 6, 9, 15, 15)}
+        <<Vektor_Bsp3, fig.width=15, fig.height=8>>=
+        barplot(vektor.1)
+        @
+    \end{frame}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Mit Vektoren arbeiten}
+        Zur Erinnerung: \texttt{vektor.1 <- c(3, 6, 9, 15, 15)}
+        <<Vektor_Bsp4>>=
+        print(vektor.1 / 3) #Multiplikation aller Werte mit 5
+        vektor.1 == c(3, 6, 9, 12, 15) #Vergleichen
+        @
+    \end{frame}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Vektoren mit Missings (NA)}
+        <<Vektor_Bsp5>>=
+        vektor.5 <- c(3, 5, 2, 9, NA, 6, 9)
+        print(vektor.5)
+        sum(vektor.5) #alle Werte aufsummieren
+        sum(vektor.5, na.rm = TRUE) #jetzt aber!
+        @
+    \end{frame}
+    
+    
+    \section{Matrizen}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Was ist eine Matrix?}
+        Eine Matrix hat mehrer Dimensionen, oft zwei. Sie ist perfekt geeignet, um ganze Datensätze aufzunehmen. Z.B. in den Reihen Versuchspersonen und in den Spalten Variablen.
+        <<Matrix_Bsp1>>=
+        matrix.1 <- matrix(seq(1,12), 3, 4) #3*4-Matrix befüllen
+        print(matrix.1)
+        @
+    \end{frame}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Auf Inhalte einer Matrix wieder zugreifen}
+        Der Zugriff erfolgt ähnlich, dem auf Vektoren: \texttt{[ZEILE, SPALTE]}
+        <<Matrix_Bsp2>>=
+        print(matrix.1[2, ]) #ganze zweite Spalte
+        print(matrix.1[, 2]) #ganze zweite Zeile
+        print(matrix.1[2,2]) #Wert in Zeile 2 und Spalte 2
+        @
+    \end{frame}
+    
+    
+    \section{Faktoren}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Faktoren sind für kategoriale Daten}
+        <<Factor_Bsp1>>=
+        wohnort <- factor(c("Köln", "Wuppertal", "Dortmund", "Essen", "Köln", "Köln", "Wuppertal", "Köln", "Dortmund", "Wuppertal", "Essen", "Wuppertal", "Dortmund", "Wuppertal"))
+        print(wohnort)
+        @
+    \end{frame}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Faktoren visualisieren}
+        Faktoren werden von den Plot-Funktionen als solche anders behandelt
+        <<Factor_Bsp2, fig.width=15, fig.height=8>>=
+        plot(wohnort)
+        @
+    \end{frame}
+    
+    
+    \section{Dataframes}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Unser täglich Brot: Dataframes}
+        Zum Schluss noch die Datenstruktur, die unterschiedliche Typen aufnehmen kann - alo einen kompletten Datensatz
+        <<Dataframe_Bsp1>>=
+        alter <- c(24,30,21,21,34,28,23,51,23,43,33,22,26,26)
+        vegetarier <- c(TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE)
+        datensatz <- data.frame(wohnort, alter, vegetarier)
+        head(datensatz, n=3)
+        @
+    \end{frame}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{Auf die Inhalte von Dataframes zugreifen}
+        <<Dataframe_Bsp2>>=
+        print(datensatz$alter)
+        print(datensatz$alter[3])
+        @
+        Wie ist der Datensatz eigentlich strukturiert?
+        <<Dataframe_Bsp3>>=
+        str(datensatz)
+        @
+    \end{frame}
+
+    \begin{frame}[containsverbatim]
+        \frametitle{subsetting!}
+        <<subsetting>>=
+        subset(datensatz, vegetarier == TRUE) # Fälle auswählen
+        subset(datensatz, select=c(wohnort, alter)) # Spalten wählen
+        @
+        Beides ist kombinierbar. Probieren Sie es aus!
+    \end{frame}
+    
+    \section{Visualisierung}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{ggplot2 - The Grammar of Graphics I}
+        \begin{block}{ggplot2-Paket installieren}
+            \texttt{install.packages("ggplot2")}
+        \end{block}        
+        <<ggplot2_Bsp1, fig.width=15, fig.height=5>>=
+        library(ggplot2) #Paket laden
+        ggplot(datensatz, aes(x=wohnort, fill=vegetarier)) + geom_bar()
+        @
+    \end{frame}
+    
+    \begin{frame}[containsverbatim]
+        \frametitle{ggplot2 - The Grammar of Graphics II}      
+        <<ggplot2_Bsp2, fig.width=15, fig.height=7>>=
+        library(ggplot2) #Paket laden
+        ggplot(datensatz, aes(x=factor(alter), fill=vegetarier)) + geom_bar() + facet_wrap(~wohnort)
+        @
+    \end{frame}
+    
+    
+    \section{Tips}
+    
+    \begin{frame}
+        \frametitle{Lust auf mehr? 5 Tips zur weiteren Vertiefung}
+        \begin{enumerate}
+            \item Toller Online-Kurs: http://tryr.codeschool.com
+            \item Quick-R (Anleitung mit Codebeispielen): http://www.statmethods.net
+            \item Videos - R in zwei Minuten: http://www.twotorials.com
+            \item R-bloggers - R news and tutorials: http://www.r-bloggers.com
+            \item ggplot2 - Online Referenz: http://docs.ggplot2.org/current/
+        \end{enumerate}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Traffic on E-Mail discussion lists}
+        \begin{figure}
+            \centering
+            \includegraphics[width=10cm]{emaildiscussions.png}
+        \end{figure}
+    \end{frame}
+    
+    \begin{frame}
+        \frametitle{Google Scholar Hits (without SPSS \& SAS)}
+        \begin{figure}
+            \centering
+            \includegraphics[width=10cm]{scholarhits1.png}
+        \end{figure}
+    \end{frame}
+    
+    \begin{frame}
+        \frametitle{Google Scholar Hits (incl. SPSS \& SAS)}
+        \begin{figure}
+            \centering
+            \includegraphics[width=10cm]{scholarhits2.png}
+        \end{figure}
+    \end{frame}
+    
+    \begin{frame}
+        \frametitle{WICHTIG: Hausaufgabe}
+        \begin{enumerate}
+            \item install.packages('psych')
+            \item install.packages('GPArotation')
+            \item install.packages('cluster')
+            \item install.packages('MASS')
+            \item Download Datensätze: fa\_data.csv, bsp.csv, ac.csv
+        \end{enumerate}
+    \end{frame}
+    
+\end{document}
