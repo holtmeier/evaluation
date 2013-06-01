@@ -19,6 +19,7 @@ Seminar Evaluationsforschung, Uni Wuppertal SS 2013
 - DATENSATZ: bsp.csv
 
 ## Diskriminanzanalyse
-
+- diskriminanzanalyse.pdf
+- DATENSATZ: ac.csv
 
 ## Metaanalyse
