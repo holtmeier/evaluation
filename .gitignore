@@ -3,3 +3,10 @@
 
 # Example code in package build process
 *-Ex.R
+cluster_abgr-eps-converted-to.pdf
+*.log
+*.nav
+*.snm
+*.tex
+*.toc
+figure/*

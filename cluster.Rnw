@@ -1,0 +1,275 @@
+\documentclass{beamer}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{array}
+\usepackage{amsmath}
+
+
+\usetheme{Boadilla}
+\usecolortheme{beaver}
+\usefonttheme{professionalfonts}
+\useinnertheme{rectangles}
+\useoutertheme{miniframes}
+
+
+
+\setbeamercovered{transparent}
+\beamertemplatenavigationsymbolsempty
+\setbeamertemplate{footline}[frame number]
+
+
+\title[Cluster]{Clusteranalyse mit R}
+\subtitle[KoelnRUG]{Seminar Evaluationsforschung, SS 2013 Uni Wuppertal}
+\author[S. Holtmeier]{Stephan Holtmeier}
+\institute[kibit]{kibit GmbH, stephan@holtmeier.de}
+\date[01.06.13]{01. Juni 2013}
+\keywords{Cluster, Analyse}
+
+
+\begin{document}
+	
+\maketitle
+\frame{\tableofcontents[currentsection]}
+
+
+\section{Hintergrund}
+
+
+\begin{frame}
+  \frametitle{Clusteranalyse: Um was es geht...}
+      \begin{columns}[c]
+		    \column[c]{6cm}
+			    \includegraphics[width=6cm]{cluster_abgr.eps}
+		    \column{5cm}
+			    \begin{block}{Die Clusteranalyse ist...}
+				    ...ein strukturentdeckendes Verfahren. Ziel ist es, einander \emph{ähnliche} Objekte (hier z.B. Führungskräfte, Abteilungen, Fragebogenitems, ...) den selben Clustern zuzuordnen.
+			    \end{block}
+          \begin{alertblock}{Gefahr}
+            In den selben Dingen können ganz unterschiedliche Muster erkannt werden.
+          \end{alertblock}
+	   \end{columns}  
+\end{frame}
+
+
+\begin{frame}[<+->]
+  \frametitle{Grundprinzip}
+  Das Vorgehen bei einer Clusteranalyse ist im Prinzip sehr einfach:
+  \begin{enumerate}
+    \item Variablen/Merkmale festlegen, die zur Clusterung herangezogen werden sollen
+    \item Distanz-/Ähnlichkeitsmatrix (=\textbf{Proximitätsmatrix}) berechnen: Entscheiden, nach welchen Kriterien (Un-)ähnlichkeit definiert sein soll.
+    \item \textbf{Clusteralgorithmus} auf die Proximitätsmatrix anwenden.
+  \end{enumerate}
+\end{frame}
+
+
+\section{Praxis-Beispiel: 360° Feedback-Daten}
+
+\begin{frame}
+  \frametitle{Beispieldatensatz: 360° Feedback}
+<<Beispieldatensatz, echo=FALSE, message=FALSE, results='asis', highlight=TRUE>>=
+library(xtable)
+bsp <- read.csv("bsp.csv", row.names="X")
+xtable(head(bsp, 5), "Beispieldatensatz (gekürzt)")
+@
+  Zwecks Komplexitätsreduktion wurde vorab eine Faktorenanalyse durchgeführt! Für jeden \textbf{Feedbackempfänger} (=Zeile) liegen drei uns drei \textbf{Dimensionsmittelwerte} (=Spalte) vor: Leadership, Communication und Performance
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Beispieldatensatz (gekürzt) visualisiert}
+  <<Visualisierung, echo=FALSE, message=FALSE, fig.height=4.5>>=
+    bsp <- read.csv("bsp.csv", row.names="X")
+    bsp <- bsp[seq(30,90),seq(1,3)] # zwecks Übersichtlichkeit gekürzt!
+    library(ggplot2)
+    library(reshape)
+    data <- melt(data.frame(FEID=rownames(bsp),bsp), id.vars=c("FEID"), measure.vars=seq(2,4))  
+    profile <- ggplot(data, aes(x=variable, y=value, color=FEID)) +
+      labs(x = "Dimension", y = "Mean dimensional Value") +
+      geom_line(aes(group=FEID))
+    print(profile)
+  @
+\end{frame}
+
+
+\section{Theorie}
+
+
+
+\begin{frame}
+  \frametitle{Welches Proximitätsmaß verwenden wir?}
+  \begin{figure}
+  \centering
+    \includegraphics[width=8cm]{profile.png}
+  \end{figure}
+  Das verwendete \textbf{Proximitätsmaß} ist abhängig vom \emph{Skalenniveau} (i.d.R. haben wir bei kibit metrische Skalen) sowie von inhaltlichen Überlegungen (Korrelation vs. Distanz). Wir verwenden meist:
+  \begin{enumerate}
+    \item Q-Korrelationskoeffizient (Ähnlichkeit)
+    \item Euklidische Metrik (Distanz)
+  \end{enumerate}
+\end{frame}
+
+
+\begin{frame}[containsverbatim]
+  \frametitle{Proximitätsmaß berechnen}
+  \begin{exampleblock}{Euklidische Distanz}
+    <<euklid, tidy=FALSE>>=
+library(cluster)
+dist<-daisy(bsp[,seq(1,3)], stand=TRUE, metric='euclidean')
+    @
+  \end{exampleblock}
+
+    \[d = \sqrt{\sum_{i=1}^{n}(x_{i}-y_{i})^{2}}\]
+
+    \begin{exampleblock}{Q-Korrelation / Produktmomentkorrelation}
+        <<qkorr, tidy=FALSE>>=
+qkorr<-round(1-abs(cor(t(bsp[,seq(1,3)]))),digits=3)
+qkorr<-qkorr[lower.tri(qkorr)]
+attr(qkorr,'class')<-'dist'
+attr(qkorr,'Size')<-nrow(bsp)
+        @
+    \end{exampleblock}
+\end{frame}
+
+
+\begin{frame}[<+->]
+  \frametitle{Clusteralgorithmus auswählen}
+  Es gibt verschiedene Clusterverfahren, die zu mehr oder weniger unterschiedlichen Ergebnissen führen.
+  \begin{enumerate}
+    \item \textbf{Hierarchische Verfahren} gehen von der gröbsten („agglomerativ“) bzw. feinsten Partition aus. Durch Aufteilen bzw. Zusammenfassen werden Cluster gebildet. Einmal gebildet, können einzelne Elemente nicht mehr getauscht werden. Die Anzahl der Cluster wird zum Schluss festgelegt.
+    \item \textbf{Partitionierende Verfahren} verwenden eine gegebene Aufteilung und ordnen die Elemente durch Austauschfunktionen um, bis die verwendete Zielfunktion ein Optimum erreicht. Die Anzahl der Cluster wird zu Beginn festgelegt.
+  \end{enumerate}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Übersicht Clusterverfahren}
+  \begin{figure}
+  \centering
+    \includegraphics[width=11cm]{clusteralgos.png}
+  \end{figure}
+\end{frame}
+
+
+
+\section{Clusteranalyse rechnen}
+
+
+\begin{frame}[containsverbatim]
+  \frametitle{Hierarchisch agglomerativ (hclust) - Analyse}
+    \begin{exampleblock}{Ward-Algoritmus auf Basis der Euklidischen Distanz}
+        <<wardclust, tidy=FALSE>>=
+        wardclust<-hclust(dist,method='ward')
+        @
+    \end{exampleblock}
+    \begin{block}{Der Ward-Algoritmus ist oft die beste Wahl, aber...}
+            Alternative Algoritmen: \textbf{average}, \textbf{complete}, \textbf{single}.
+            Ausreißer können gut via single-Linkage-Verfahren identifizieren und ggf. vorab eliminiert werden.
+    \end{block}
+    \begin{exampleblock}{Visualisierung der Clusterdaten - Dendrogramm}
+        <<wardplot1, eval=FALSE, tidy=FALSE>>=
+        plot(wardclust,hang=-0.01)
+        @
+    \end{exampleblock}
+\end{frame}
+
+
+\begin{frame}[containsverbatim]
+  \frametitle{Hierarchisch agglomerativ (hclust) - Dendrogramm}
+        <<wardplot2, echo=FALSE, fig.width=15, fig.height=9>>=
+        plot(wardclust,hang=-0.01,main=NULL)
+        @
+\end{frame}
+
+
+\begin{frame}[containsverbatim]
+  \frametitle{Hierarchisch agglomerativ (hclust) - Clusteranzahl?}
+        <<wardk, echo=2,  fig.width=15, fig.height=9>>=
+        plot(wardclust,hang=-0.01)
+        rect.hclust(wardclust, k=4)
+        @
+\end{frame}
+
+
+\begin{frame}[containsverbatim]
+  \frametitle{Partitionierend (PAM) - Analyse}
+        \begin{exampleblock}{PAM-Algoritmus auf Basis der Euklidischen Distanz}
+            <<pamclust, tidy=FALSE>>=
+            pamclust<-pam(dist,4,diss=TRUE)
+            @
+        \end{exampleblock}
+        \begin{block}{PAM = Partinioning Around Medoids}
+            robustere Alternative zu k-Means; vergl. Hellbrück (2009). Im Unterschied zu den hierarchisch agglomativen Verfahren muss hier die Anzahl der Cluster vorab festgelegt werden.
+        \end{block}
+    \begin{exampleblock}{Visualisierung der Clusterdaten - Silhouette-Plot}
+        <<pamplot1, eval=FALSE, tidy=FALSE>>=
+        plot(pamclust)
+        @
+    \end{exampleblock}
+\end{frame}
+
+
+\begin{frame}[containsverbatim]
+  \frametitle{Partitionierend (PAM) - Silhouette-Plot}
+        <<pamplot2, echo=FALSE, fig.width=10, fig.height=6, tidy=FALSE>>=
+        plot(pamclust)
+        @
+\end{frame}
+
+
+\begin{frame}[containsverbatim]
+  \frametitle{Interpretation eines Silhouette-Plot}
+  \begin{table}
+    \begin{tabular}{ll}
+        ASW\footnote{AWS=Average silhouette width} & Interpretation \\ \hline
+        0.71-1.0 & super Clusterstruktur! \\
+        0.51-0.70 & gute Clusterstruktur \\
+        0.26-0.50 & schwache Clusterstruktur, evtl. artifiziell \\
+        < 0.25 & unzureichende Clusterstruktur \\ \hline
+    \end{tabular}
+   \end{table}
+    \begin{exampleblock}{Auch für hclust() kann der Silhouetteplot angefordert werden}
+            <<silhward, tidy=FALSE, eval=FALSE>>=
+            plot(silhouette(cutree(wardclust,4),dist))
+            @
+    \end{exampleblock}
+\end{frame}
+
+
+
+\begin{frame}[containsverbatim,allowframebreaks]
+  \frametitle{Cluster interpretieren}
+        <<visual, fig.width=10, fig.height=6, tidy=FALSE>>=
+        library(reshape, ggplot2)
+
+        #Clusterzuordnung dem Datensatz hinzufügen:
+        bsp$ward<-factor(cutree(wardclust,k=4))
+        bsp$pam<-factor(pamclust$clustering)
+
+        long <- melt(data.frame(FEID=rownames(bsp),bsp),
+            id.vars=c("FEID", "ward"), measure.vars=seq(2,4))
+        ggplot(long, aes(x=variable, y=value, color=factor(ward))) +
+            geom_line(aes(group=FEID), alpha=.3) +
+            labs(x = "Dimension", y = "Mean dimensional Value") +
+            facet_wrap(~ ward)
+        @
+\end{frame}
+
+
+\begin{frame}[containsverbatim]
+  \frametitle{Empfehlungen zur Vertiefung}
+    \begin{enumerate}
+        \item \textbf{pvclust()} berechnet p-Werte für hierarchische Cluster auf Basis von “Multiscale Bootstrap Resampling“. Die Daten müssen transponiert werden. Sehr rechenintensiv! Cluster mit p-Wert größer .95 werden optisch hervorgehoben, denn sie erfahren starken Support.
+        \item Visualisierung mit \textbf{clusplot()} und \textbf{plotcluster()}
+        \item Und zum nachlesen: Das Kapitel "Clusteranalyse" im Backhaus (2003)
+        \item \textbf{cluster.stats()} aus dem \textbf{fpc}-Paket
+    \end{enumerate}
+\end{frame}
+
+
+\end{document}
